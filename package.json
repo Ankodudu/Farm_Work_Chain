@@ -21,7 +21,7 @@
     "@dfinity/agent": "^0.19.3",
     "@dfinity/auth-client": "^0.19.3",
     "@dfinity/candid": "^0.19.2",
-    "@dfinity/identity": "^1.2.0",
+    "@dfinity/identity": "^0.19.0",
     "@dfinity/ledger": "^0.0.15",
     "@dfinity/nns": "^0.16.7",
     "@dfinity/nns-proto": "^1.0.2",
