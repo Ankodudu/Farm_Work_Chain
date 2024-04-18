@@ -134,6 +134,12 @@ export default Canister({
     //create a contract
     createContract: update([EmploymentContractPayload], Result(EmploymentContract, Message), (payload) => {
         try {
+            if (!payload.farmerId || !payload.jobOfferId || !payload.jobDescription || !payload.jobTerms || !payload.wages || !payload.duration) {
+                return Err({ InvalidPayload: "One or more required fields are missing in the payload" });
+            }
+            if (payload.wages <= 0) {
+                return Err({ InvalidPayload: "Wages must be more than zero" });
+            }
             const contractId = uuidv4();
             const contract = { ...payload, contractId, workerId: None, status: "PENDING" };
             contractStorage.insert(contractId, contract);
@@ -146,6 +152,9 @@ export default Canister({
     //create a worker profile
     createWorkerProfile: update([WorkerProfilePayload], Result(WorkerProfile, Message), (payload) => {
         try {
+            if (!payload.name || !payload.address || !payload.experience || !payload.contactNo) {
+                return Err({ InvalidPayload: "One or more required fields are missing in the payload" });
+            }
             const workerId = uuidv4();
             const worker = { ...payload, workerId, owner: ic.caller(), skills: [], references: [], earnedPoints: 0n, verified: false };
             workerStorage.insert(workerId, worker);
@@ -158,6 +167,9 @@ export default Canister({
     //create a job offer
     createJobOffer: update([JobOfferPayload], Result(JobOffer, Message), (payload) => {
         try {
+            if (!payload.jobTitle || !payload.jobDescription || !payload.duration) {
+                return Err({ InvalidPayload: "One or more required fields are missing in the payload" });
+            }
             const jobOfferId = uuidv4();
             const jobOffer = { ...payload, jobOfferId, status: "PENDING" };
             jobStorage.insert(jobOfferId, jobOffer);
@@ -171,6 +183,9 @@ export default Canister({
     //create a farmer profile
     createFarmerProfile: update([FarmerProfilePayload], Result(FarmerProfile, Message), (payload) => {
         try {
+            if (!payload.name || !payload.farmSize || !payload.location || !payload.contactNo) {
+                return Err({ InvalidPayload: "One or more required fields are missing in the payload" });
+            }
             const farmerId = uuidv4();
             const farmer = { ...payload, farmerId, owner: ic.caller(),  rating: 0n, verified: false };
             farmerStorage.insert(farmerId, farmer);
