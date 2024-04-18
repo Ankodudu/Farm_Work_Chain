@@ -133,36 +133,66 @@ const icpCanister = Ledger(Principal.fromText("ryjl3-tyaaa-aaaaa-aaaba-cai"));
 export default Canister({
     //create a contract
     createContract: update([EmploymentContractPayload], Result(EmploymentContract, Message), (payload) => {
-        const contractId = uuidv4();
-        const contract = { ...payload, contractId, workerId: None, status: "PENDING" };
-        contractStorage.insert(contractId, contract);
-        return Ok(contract);
+        try {
+            if (!payload.farmerId || !payload.jobOfferId || !payload.jobDescription || !payload.jobTerms || !payload.wages || !payload.duration) {
+                return Err({ InvalidPayload: "One or more required fields are missing in the payload" });
+            }
+            if (payload.wages <= 0) {
+                return Err({ InvalidPayload: "Wages must be more than zero" });
+            }
+            const contractId = uuidv4();
+            const contract = { ...payload, contractId, workerId: None, status: "PENDING" };
+            contractStorage.insert(contractId, contract);
+            return Ok(contract);
+        } catch (error) {
+            console.error('Failed to create contract:', error);
+        }
     }),
 
     //create a worker profile
     createWorkerProfile: update([WorkerProfilePayload], Result(WorkerProfile, Message), (payload) => {
-        const workerId = uuidv4();
-        const worker = { ...payload, workerId, owner: ic.caller(), skills: [], references: [], earnedPoints: 0n, verified: false };
-        workerStorage.insert(workerId, worker);
-        return Ok(worker);
+        try {
+            if (!payload.name || !payload.address || !payload.experience || !payload.contactNo) {
+                return Err({ InvalidPayload: "One or more required fields are missing in the payload" });
+            }
+            const workerId = uuidv4();
+            const worker = { ...payload, workerId, owner: ic.caller(), skills: [], references: [], earnedPoints: 0n, verified: false };
+            workerStorage.insert(workerId, worker);
+            return Ok(worker);
+        } catch (error) {
+            console.error('Failed to create profile:', error);
+        }
     }),
 
     //create a job offer
     createJobOffer: update([JobOfferPayload], Result(JobOffer, Message), (payload) => {
-        const jobOfferId = uuidv4();
-        const jobOffer = { ...payload, jobOfferId, status: "PENDING" };
-        jobStorage.insert(jobOfferId, jobOffer);
-        return Ok(jobOffer);
+        try {
+            if (!payload.jobTitle || !payload.jobDescription || !payload.duration) {
+                return Err({ InvalidPayload: "One or more required fields are missing in the payload" });
+            }
+            const jobOfferId = uuidv4();
+            const jobOffer = { ...payload, jobOfferId, status: "PENDING" };
+            jobStorage.insert(jobOfferId, jobOffer);
+            return Ok(jobOffer);
+        } catch (error) {
+            console.error('Failed to create job offer:', error);
+        }
     }),
 
   
-
     //create a farmer profile
     createFarmerProfile: update([FarmerProfilePayload], Result(FarmerProfile, Message), (payload) => {
-        const farmerId = uuidv4();
-        const farmer = { ...payload, farmerId, owner: ic.caller(),  rating: 0n, verified: false };
-        farmerStorage.insert(farmerId, farmer);
-        return Ok(farmer);
+        try {
+            if (!payload.name || !payload.farmSize || !payload.location || !payload.contactNo) {
+                return Err({ InvalidPayload: "One or more required fields are missing in the payload" });
+            }
+            const farmerId = uuidv4();
+            const farmer = { ...payload, farmerId, owner: ic.caller(),  rating: 0n, verified: false };
+            farmerStorage.insert(farmerId, farmer);
+            return Ok(farmer);
+        } catch (error) {
+            console.error('Profile creation failed:', error);
+        }
     }),
 
     //get a contract by id
@@ -306,90 +336,123 @@ export default Canister({
 
     //update a contract
     updateContract: update([text, EmploymentContractPayload], Result(EmploymentContract, Message), (contractId, payload) => {
-        const contractOpt = contractStorage.get(contractId);
-        if ("None" in contractOpt) {
-            return Err({ NotFound: `contract with id=${contractId} not found` });
+        try {
+            const contractOpt = contractStorage.get(contractId);
+            if ("None" in contractOpt) {
+                return Err({ NotFound: `contract with id=${contractId} not found` });
+            }
+            const contract = contractOpt.Some;
+            const updatedContract = { ...contract, ...payload };
+            contractStorage.insert(contractId, updatedContract);
+            return Ok(updatedContract);
+        } catch (error) {
+            console.error('Failed to update contract:', error);
         }
-        const contract = contractOpt.Some;
-        const updatedContract = { ...contract, ...payload };
-        contractStorage.insert(contractId, updatedContract);
-        return Ok(updatedContract);
     }),
 
     //update a worker profile
     updateWorkerProfile: update([text, WorkerProfilePayload], Result(WorkerProfile, Message), (workerId, payload) => {
-        const workerOpt = workerStorage.get(workerId);
-        if ("None" in workerOpt) {
-            return Err({ NotFound: `worker with id=${workerId} not found` });
+        try {
+            const workerOpt = workerStorage.get(workerId);
+            if ("None" in workerOpt) {
+                return Err({ NotFound: `worker with id=${workerId} not found` });
+            }
+            const worker = workerOpt.Some;
+            const updatedWorker = { ...worker, ...payload };
+            workerStorage.insert(workerId, updatedWorker);
+            return Ok(updatedWorker);
+        } catch (error) {
+            console.error('Failed to update profile:', error);
         }
-        const worker = workerOpt.Some;
-        const updatedWorker = { ...worker, ...payload };
-        workerStorage.insert(workerId, updatedWorker);
-        return Ok(updatedWorker);
     }),
 
     //update a job offer
     updateJobOffer: update([text, JobOfferPayload], Result(JobOffer, Message), (jobOfferId, payload) => {
-        const jobOpt = jobStorage.get(jobOfferId);
-        if ("None" in jobOpt) {
-            return Err({ NotFound: `job offer with id=${jobOfferId} not found` });
+        try {
+            const jobOpt = jobStorage.get(jobOfferId);
+            if ("None" in jobOpt) {
+                return Err({ NotFound: `job offer with id=${jobOfferId} not found` });
+            }
+            const job = jobOpt.Some;
+            const updatedJob = { ...job, ...payload };
+            jobStorage.insert(jobOfferId, updatedJob);
+            return Ok(updatedJob);
+        } catch (error) {
+            console.error('Failed to update job offer:', error);
         }
-        const job = jobOpt.Some;
-        const updatedJob = { ...job, ...payload };
-        jobStorage.insert(jobOfferId, updatedJob);
-        return Ok(updatedJob);
     }),
 
 
 
     //update a farmer profile
     updateFarmerProfile: update([text, FarmerProfilePayload], Result(FarmerProfile, Message), (farmerId, payload) => {
-        const farmerOpt = farmerStorage.get(farmerId);
-        if ("None" in farmerOpt) {
-            return Err({ NotFound: `farmer with id=${farmerId} not found` });
+        try {
+            const farmerOpt = farmerStorage.get(farmerId);
+            if ("None" in farmerOpt) {
+                return Err({ NotFound: `farmer with id=${farmerId} not found` });
+            }
+            const farmer = farmerOpt.Some;
+            const updatedFarmer = { ...farmer, ...payload };
+            farmerStorage.insert(farmerId, updatedFarmer);
+            return Ok(updatedFarmer);
+        } catch (error) {
+            console.error('Failed to update profile:', error);
         }
-        const farmer = farmerOpt.Some;
-        const updatedFarmer = { ...farmer, ...payload };
-        farmerStorage.insert(farmerId, updatedFarmer);
-        return Ok(updatedFarmer);
     }),
 
     //delete a contract
     deleteContract: update([text], Result(EmploymentContract, Message), (contractId) => {
-        const contractOpt = contractStorage.remove(contractId);
-        if ("None" in contractOpt) {
-            return Err({ NotFound: `contract with id=${contractId} not found` });
+        try {
+            const contractOpt = contractStorage.remove(contractId);
+            if ("None" in contractOpt) {
+                return Err({ NotFound: `contract with id=${contractId} not found` });
+            }
+            return Ok(contractOpt.Some);
+        } catch (error) {
+            console.error('Operation failed:', error);
         }
-        return Ok(contractOpt.Some);
     }),
 
     //delete a worker profile
     deleteWorkerProfile: update([text], Result(WorkerProfile, Message), (workerId) => {
-        const workerOpt = workerStorage.remove(workerId);
-        if ("None" in workerOpt) {
-            return Err({ NotFound: `worker with id=${workerId} not found` });
+        try {
+            const workerOpt = workerStorage.remove(workerId);
+            if ("None" in workerOpt) {
+                return Err({ NotFound: `worker with id=${workerId} not found` });
+            }
+            return Ok(workerOpt.Some);
+        } catch (error) {
+            console.error('Operation failed:', error);
         }
-        return Ok(workerOpt.Some);
     }),
 
     //delete a job offer
     deleteJobOffer: update([text], Result(JobOffer, Message), (jobOfferId) => {
-        const jobOpt = jobStorage.remove(jobOfferId);
-        if ("None" in jobOpt) {
-            return Err({ NotFound: `job offer with id=${jobOfferId} not found` });
+        try {
+            const jobOpt = jobStorage.remove(jobOfferId);
+            if ("None" in jobOpt) {
+                return Err({ NotFound: `job offer with id=${jobOfferId} not found` });
+            }
+            return Ok(jobOpt.Some);
+        } catch (error) {
+            console.error('Failed to delete job offer:', error);
+            return error;
         }
-        return Ok(jobOpt.Some);
     }),
 
  
 
     //delete a farmer profile
     deleteFarmerProfile: update([text], Result(FarmerProfile, Message), (farmerId) => {
-        const farmerOpt = farmerStorage.remove(farmerId);
-        if ("None" in farmerOpt) {
-            return Err({ NotFound: `farmer with id=${farmerId} not found` });
+        try {
+            const farmerOpt = farmerStorage.remove(farmerId);
+            if ("None" in farmerOpt) {
+                return Err({ NotFound: `farmer with id=${farmerId} not found` });
+            }
+            return Ok(farmerOpt.Some);
+        } catch (error) {
+            console.error('Failed to delete profile:', error);
         }
-        return Ok(farmerOpt.Some);
     }),
 
  
@@ -397,16 +460,20 @@ export default Canister({
 
     // worker accepts a contract offer and becomes a worker 
     acceptContract: update([text, text], Result(EmploymentContract, Message), (contractId, workerId) => {
-        const contractOpt = contractStorage.get(contractId);
-        if ("None" in contractOpt) {
-            return Err({ NotFound: `contract with id=${contractId} not found` });
+        try {
+            const contractOpt = contractStorage.get(contractId);
+            if ("None" in contractOpt) {
+                return Err({ NotFound: `contract with id=${contractId} not found` });
+            }
+            const contract = contractOpt.Some;
+            if (contract.workerId.isSome) {
+                return Err({ InvalidPayload: `contract with id=${contractId} already has a worker` });
+            }
+            contractStorage.insert(contractId, { ...contract, workerId: Some(workerId), status: "ACCEPTED" });
+            return Ok(contract);
+        } catch (error) {
+            console.log('Failed to accept contract:', error);
         }
-        const contract = contractOpt.Some;
-        if (contract.workerId.isSome) {
-            return Err({ InvalidPayload: `contract with id=${contractId} already has a worker` });
-        }
-        contractStorage.insert(contractId, { ...contract, workerId: Some(workerId), status: "ACCEPTED" });
-        return Ok(contract);
     }),
 
   
@@ -454,87 +521,97 @@ export default Canister({
 
     //create a reserve
     createReserveJobPay: update([text], Result(JobPay, Message), (contractId) => {
-        const contractOpt = contractStorage.get(contractId);
-        if ("None" in contractOpt) {
-            return Err({ NotFound: `cannot reserve job: contract with id=${contractId} not found` });
+        try {
+            const contractOpt = contractStorage.get(contractId);
+            if ("None" in contractOpt) {
+                return Err({ NotFound: `cannot reserve job: contract with id=${contractId} not found` });
+            }
+            const contract = contractOpt.Some;
+
+            const farmerOpt = farmerStorage.get(contract.farmerId);
+
+            if ("None" in farmerOpt) {
+                return Err({ NotFound: `cannot reserve job: farmer with id=${contract.farmerId} not found` });
+            }
+            const farmer = farmerOpt.Some;
+
+            // workerId is an optional field in the contract record so we need to check if it is present
+            if (contract.workerId.None === null) {
+                return Err({ NotFound: `cannot reserve job: worker not assigned to the contract with id=${contractId}` });
+            }
+
+            const workerOpt = workerStorage.get(contract.workerId.Some);
+            if ("None" in workerOpt) {
+                return Err({ NotFound: `cannot reserve job: worker with id=${contract.workerId.Some} not found` });
+            }
+            const worker = workerOpt.Some;
+            
+            
+
+            const jobPay = {
+                ContractId: contract.contractId,
+                price: contract.wages,
+                status: { PaymentPending: "PAYMENT_PENDING" },
+                farmer: farmer.owner,
+                worker: worker.owner,
+                paid_at_block: None,
+                memo: generateCorrelationId(contractId)
+            };
+            pendingJobPay.insert(jobPay.memo, jobPay);
+            discardByTimeout(jobPay.memo, TIMEOUT_PERIOD);
+            return Ok(jobPay);
+        } catch (error) {
+            console.error('Faied to create a reserve:', error);
         }
-        const contract = contractOpt.Some;
-
-        const farmerOpt = farmerStorage.get(contract.farmerId);
-
-        if ("None" in farmerOpt) {
-            return Err({ NotFound: `cannot reserve job: farmer with id=${contract.farmerId} not found` });
-        }
-        const farmer = farmerOpt.Some;
-
-        // workerId is an optional field in the contract record so we need to check if it is present
-        if (contract.workerId.None === null) {
-            return Err({ NotFound: `cannot reserve job: worker not assigned to the contract with id=${contractId}` });
-        }
-
-        const workerOpt = workerStorage.get(contract.workerId.Some);
-        if ("None" in workerOpt) {
-            return Err({ NotFound: `cannot reserve job: worker with id=${contract.workerId.Some} not found` });
-        }
-        const worker = workerOpt.Some;
-        
-        
-
-        const jobPay = {
-            ContractId: contract.contractId,
-            price: contract.wages,
-            status: { PaymentPending: "PAYMENT_PENDING" },
-            farmer: farmer.owner,
-            worker: worker.owner,
-            paid_at_block: None,
-            memo: generateCorrelationId(contractId)
-        };
-        pendingJobPay.insert(jobPay.memo, jobPay);
-        discardByTimeout(jobPay.memo, TIMEOUT_PERIOD);
-        return Ok(jobPay);
     }
     ),
 
     // Complete a Job Pay to Worker
     completeJobPay: update([Principal,text,nat64, nat64, nat64], Result(JobPay, Message), async (worker,contractId,payPrice, block, memo) => {
-        const paymentVerified = await verifyPaymentInternal(worker,payPrice, block, memo);
-        if (!paymentVerified) {
-            return Err({ NotFound: `cannot complete the Job Pay: cannot verify the payment, memo=${memo}` });
+        try {
+            const paymentVerified = await verifyPaymentInternal(worker,payPrice, block, memo);
+            if (!paymentVerified) {
+                return Err({ NotFound: `cannot complete the Job Pay: cannot verify the payment, memo=${memo}` });
+            }
+            const pendingJobPayOpt = pendingJobPay.remove(memo);
+            if ("None" in pendingJobPayOpt) {
+                return Err({ NotFound: `cannot complete the Job Pay: there is no pending Job Pay with id=${contractId}` });
+            }
+            const jobPay = pendingJobPayOpt.Some;
+            const updatedReserve = { ...jobPay, status: { Completed: "COMPLETED" }, paid_at_block: Some(block) };
+
+            const contractOpt = contractStorage.get(contractId);
+            if ("None" in contractOpt){
+                throw Error(`Contract with id=${contractId} not found`)
+            }
+
+            const contract = contractOpt.Some;
+            console.log("first contract",contract)
+            contract.status = "COMPLETED";
+
+            console.log("second contract",contract)
+
+            // // Update the worker Earned Points
+
+            const workerOpt = workerStorage.get(contract.workerId.Some);
+            console.log("workOpt",workerOpt)
+            if ("None" in workerOpt){
+                throw Error(`Worker with id=${contract.workerId.Some} not found`)
+            }
+            const workerUpdate = workerOpt.Some;
+            console.log("earned Points",  workerUpdate.earnedPoints)
+            if (!workerUpdate) {
+                console.log("Error updating worker points")
+            }
+
+            workerUpdate.earnedPoints += BigInt(10);
+            workerStorage.insert(workerUpdate.workerId,worker)
+            contractStorage.insert(contract.contractId,contract)
+            persistedJobPay.insert(ic.caller(), updatedReserve);
+            return Ok(updatedReserve);
+        } catch (error) {
+            console.error('Failed to make payment:', error);
         }
-        const pendingJobPayOpt = pendingJobPay.remove(memo);
-        if ("None" in pendingJobPayOpt) {
-            return Err({ NotFound: `cannot complete the Job Pay: there is no pending Job Pay with id=${contractId}` });
-        }
-        const jobPay = pendingJobPayOpt.Some;
-        const updatedReserve = { ...jobPay, status: { Completed: "COMPLETED" }, paid_at_block: Some(block) };
-
-        const contractOpt = contractStorage.get(contractId);
-        if ("None" in contractOpt){
-            throw Error(`Contract with id=${contractId} not found`)
-        }
-
-        const contract = contractOpt.Some;
-        console.log("first contract",contract)
-        contract.status = "COMPLETED";
-
-        console.log("second contract",contract)
-
-        // console.log("Contract",contract)
-        // // Update the worker Earned Points
-
-        // const workerOpt = workerStorage.get(contract.workerId.Some);
-        // console.log("workOpt",workerOpt)
-        // if ("None" in workerOpt){
-        //     throw Error(`Worker with id=${contract.workerId.Some} not found`)
-        // }
-        // const workerUpdate = workerOpt.Some;
-        // console.log("earned Points",  workerUpdate.earnedPoints)
-
-        // workerUpdate.earnedPoints += BigInt(10);
-        // workerStorage.insert(workerUpdate.workerId,worker)
-        contractStorage.insert(contract.contractId,contract)
-        persistedJobPay.insert(ic.caller(), updatedReserve);
-        return Ok(updatedReserve);
     }
     ),
 
